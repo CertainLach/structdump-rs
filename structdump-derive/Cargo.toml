@@ -2,12 +2,11 @@
 name = "structdump-derive"
 description = "Dump structure to source code - derive macro"
 license = "MIT"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Лач <iam@lach.pw>"]
 edition = "2018"
 
 [dependencies]
-structdump = {path = "../", version = "0.1.0"}
 syn = "1.0.33"
 quote = "1.0.7"
 proc-macro2 = "1.0.18"

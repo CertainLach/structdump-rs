@@ -130,9 +130,7 @@ macro_rules! num_impl {
 	($t:ty) => {
 		impl Codegen for &$t {
 			fn gen_code(&self, _res: &mut CodegenResult, out: &mut String) {
-				out.push('"');
 				write!(out, "{}{}", self, stringify!($t)).unwrap();
-				out.push('"');
 			}
 		}
 	};
