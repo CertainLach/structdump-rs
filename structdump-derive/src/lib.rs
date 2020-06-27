@@ -79,7 +79,7 @@ fn impl_codegen(ast: &syn::DeriveInput) -> TokenStream {
 				out.push_str(stringify!(#name));
 				#body
 			}
-		},
+		}
 		Data::Enum(data) => {
 			let variants = data.variants.iter().map(|v| {
 				let var_name = &v.ident;
@@ -103,8 +103,8 @@ fn impl_codegen(ast: &syn::DeriveInput) -> TokenStream {
 		Data::Union(_) => unimplemented!(),
 	};
 	let gen = quote! {
-		impl ::codegen::Codegen for #name {
-			fn gen_code(&self, res: &mut CodegenResult, out: &mut String) {
+		impl ::structdump::Codegen for #name {
+			fn gen_code(&self, res: &mut ::structdump::CodegenResult, out: &mut ::std::string::String) {
 				#out
 			}
 		}
