@@ -109,8 +109,10 @@ impl Codegen for &str {
 	}
 }
 impl Codegen for String {
-	fn gen_code(&self, res: &mut CodegenResult, out: &mut String) {
-		(&self as &str).gen_code(res, out)
+	fn gen_code(&self, _res: &mut CodegenResult, out: &mut String) {
+		out.push('"');
+		out.push_str(&self.escape_debug().collect::<String>());
+		out.push_str("\".to_string()");
 	}
 }
 impl Codegen for PathBuf {
