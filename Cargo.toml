@@ -1,9 +1,5 @@
-[package]
-name = "structdump"
-description = "Dump structure to source code"
-license = "MIT"
-version = "0.1.2"
-authors = ["Лач <iam@lach.pw>"]
-edition = "2018"
-
-workspaces = ["structdump-derive"]
+[workspace]
+members = [
+    "structdump",
+    "structdump-derive"
+]
