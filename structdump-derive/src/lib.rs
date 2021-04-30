@@ -19,7 +19,7 @@ fn fields_codegen_match(fields: &Fields) -> proc_macro2::TokenStream {
 		}
 		Fields::Unnamed(ref fields) => {
 			let f = fields.unnamed.iter().enumerate().map(|(i, f)| {
-				let name = Ident::new(&format!("f{}", i), syn::export::Span::call_site());
+				let name = Ident::new(&format!("f{}", i), proc_macro2::Span::call_site());
 				quote_spanned! {f.span()=>#name}
 			});
 			quote! {(#(#f, )*)}
@@ -50,7 +50,7 @@ fn fields_codegen_body(fields: &Fields) -> proc_macro2::TokenStream {
 		}
 		Fields::Unnamed(ref fields) => {
 			let f = fields.unnamed.iter().enumerate().map(|(i, f)| {
-				let name = Ident::new(&format!("f{}", i), syn::export::Span::call_site());
+				let name = Ident::new(&format!("f{}", i), proc_macro2::Span::call_site());
 				quote_spanned! {f.span()=>{
 					out.push_str(&res.add_value(&#name));
 				}}
