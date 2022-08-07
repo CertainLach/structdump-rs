@@ -2,6 +2,14 @@
 name = "structdump"
 description = "Dump structure to source code"
 license = "MIT"
-version = "0.1.2"
-authors = ["Лач <iam@lach.pw>"]
-edition = "2018"
+version = "0.2.0"
+authors = ["Yaroslav Bolyukin <iam@lach.pw>"]
+edition = "2021"
+
+[features]
+derive = ["structdump-derive"]
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+structdump-derive = { version = "0.2.0", path = "../structdump-derive", optional = true }

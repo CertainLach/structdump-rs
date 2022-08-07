@@ -1,11 +1,14 @@
 use proc_macro::TokenStream;
-use quote::{quote, quote_spanned};
+use quote::{format_ident, quote, quote_spanned};
 use syn::spanned::Spanned;
 use syn::{Data, Fields, Ident};
 
 #[proc_macro_derive(Codegen)]
 pub fn derive_codegen(input: TokenStream) -> TokenStream {
-	let ast = syn::parse(input).unwrap();
+	let ast = match syn::parse(input) {
+		Ok(v) => v,
+		Err(e) => return e.to_compile_error().into(),
+	};
 	impl_codegen(&ast)
 }
 fn fields_codegen_match(fields: &Fields) -> proc_macro2::TokenStream {
@@ -19,7 +22,7 @@ fn fields_codegen_match(fields: &Fields) -> proc_macro2::TokenStream {
 		}
 		Fields::Unnamed(ref fields) => {
 			let f = fields.unnamed.iter().enumerate().map(|(i, f)| {
-				let name = Ident::new(&format!("f{}", i), proc_macro2::Span::call_site());
+				let name = format_ident!("f{i}");
 				quote_spanned! {f.span()=>#name}
 			});
 			quote! {(#(#f, )*)}
@@ -29,42 +32,46 @@ fn fields_codegen_match(fields: &Fields) -> proc_macro2::TokenStream {
 		}
 	}
 }
-fn fields_codegen_body(fields: &Fields) -> proc_macro2::TokenStream {
+fn fields_codegen_body(
+	name: &Ident,
+	variant: Option<&Ident>,
+	fields: &Fields,
+) -> proc_macro2::TokenStream {
+	let name = name.to_string();
+	let variant = variant
+		.map(|v| {
+			let v = v.to_string();
+			quote! {
+				Some(::structdump::format_ident!(#v))
+			}
+		})
+		.unwrap_or_else(|| quote! {None});
 	match fields {
 		Fields::Named(ref fields) => {
 			let f = fields.named.iter().map(|f| {
-				let name = &f.ident;
-				quote_spanned! {f.span()=>{
-					out.push_str(stringify!(#name));
-					out.push(':');
-					out.push_str(&res.add_value(&#name));
-				}}
+				let name = f
+					.ident
+					.clone()
+					.expect("we're iterating over Fields::Named")
+					.to_string();
+				let ident = &f.ident;
+				quote! {
+					.field(res, ::structdump::format_ident!(#name), #ident)
+				}
 			});
-			quote! {
-				out.push('{');
-				#(#f;
-					out.push(',');
-				)*
-				out.push('}');
-			}
+			quote! {<::structdump::StructBuilder<::structdump::Named>>::new(::structdump::format_ident!(#name), #variant, unique)#(#f)*.build(res)}
 		}
 		Fields::Unnamed(ref fields) => {
-			let f = fields.unnamed.iter().enumerate().map(|(i, f)| {
-				let name = Ident::new(&format!("f{}", i), proc_macro2::Span::call_site());
-				quote_spanned! {f.span()=>{
-					out.push_str(&res.add_value(&#name));
-				}}
+			let f = fields.unnamed.iter().enumerate().map(|(i, _)| {
+				let ident = format_ident!("f{i}");
+				quote! {
+					.field(res, #ident)
+				}
 			});
-			quote! {
-				out.push('(');
-				#(#f;
-					out.push(',');
-				)*
-				out.push(')');
-			}
+			quote! {<::structdump::StructBuilder<::structdump::Unnamed>>::new(::structdump::format_ident!(#name), #variant, unique)#(#f)*.build(res)}
 		}
 		Fields::Unit => {
-			quote! {}
+			quote! {<::structdump::StructBuilder<::structdump::Unit>>::new(::structdump::format_ident!(#name), #variant, unique).build()}
 		}
 	}
 }
@@ -73,10 +80,9 @@ fn impl_codegen(ast: &syn::DeriveInput) -> TokenStream {
 	let out = match &ast.data {
 		Data::Struct(ref data) => {
 			let head = fields_codegen_match(&data.fields);
-			let body = fields_codegen_body(&data.fields);
+			let body = fields_codegen_body(name, None, &data.fields);
 			quote! {
 				let #name #head = &self;
-				out.push_str(stringify!(#name));
 				#body
 			}
 		}
@@ -84,18 +90,15 @@ fn impl_codegen(ast: &syn::DeriveInput) -> TokenStream {
 			let variants = data.variants.iter().map(|v| {
 				let var_name = &v.ident;
 				let match_q = fields_codegen_match(&v.fields);
-				let match_b = fields_codegen_body(&v.fields);
+				let match_b = fields_codegen_body(name, Some(var_name), &v.fields);
 				quote_spanned! {v.span()=>
 					#name::#var_name #match_q => {
-						out.push_str(stringify!(#var_name));
 						#match_b
 					}
 				}
 			});
 			quote! {
-				out.push_str(stringify!(#name));
-				out.push_str("::");
-				match self {
+				match &self {
 					#(#variants ,)*
 				}
 			}
@@ -104,7 +107,7 @@ fn impl_codegen(ast: &syn::DeriveInput) -> TokenStream {
 	};
 	let gen = quote! {
 		impl ::structdump::Codegen for #name {
-			fn gen_code(&self, res: &mut ::structdump::CodegenResult, out: &mut ::std::string::String) {
+			fn gen_code(&self, res: &mut ::structdump::CodegenResult, unique: bool) -> ::structdump::TokenStream {
 				#out
 			}
 		}

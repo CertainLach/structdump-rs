@@ -2,14 +2,14 @@
 name = "structdump-derive"
 description = "Dump structure to source code - derive macro"
 license = "MIT"
-version = "0.1.2"
-authors = ["Лач <iam@lach.pw>"]
-edition = "2018"
+version = "0.2.0"
+authors = ["Yaroslav Bolyukin <iam@lach.pw>"]
+edition = "2021"
 
 [dependencies]
-syn = "1.0.33"
-quote = "1.0.7"
-proc-macro2 = "1.0.18"
+syn = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"
 
 [lib]
 proc-macro = true
